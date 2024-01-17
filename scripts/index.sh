@@ -6,3 +6,15 @@
 
 # STAR --runThreadN 4 --runMode genomeGenerate --genomeDir <outdir> \
 # --genomeFastaFiles <genomefile> --genomeSAindexNbases 9
+
+if ["$#" -ne 2];then
+	echo 'Usage: $0 <genome_file><output_directory>'
+	exit
+fi
+
+genome_file="$1"
+output_directory="$2"
+
+STAR --runThreadN 4 --runMode genomeGenerate --genomeDir "$output_directory" \
+     --genomeFastaFiles "$genome_file" --genomeSAindexNbases 9
+
