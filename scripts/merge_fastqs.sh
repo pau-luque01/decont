@@ -4,8 +4,8 @@
 #
 # The directory containing the samples is indicated by the first argument ($1).
 
-if ["$#" -ne 3];then
-	echo 'Usage: $0 <samples_directory><output_directory><sample_id>'
+if [ "$#" -ne 3 ];then
+	echo 'Usage: $0 <samples_directory> <output_directory> <sample_id>'
 	exit 1
 fi
 
@@ -14,5 +14,5 @@ output_directory="$2"
 sample_id="$3"
 
 #Merging compressed text files
-cat '$samples_directory/$sample_id'*.fastq.gz > '$output_directory/$sample_id.fastq.gz'
+cat "$samples_directory/$sample_id"*.fastq.gz > "$output_directory/$sample_id.fastq.gz"
 

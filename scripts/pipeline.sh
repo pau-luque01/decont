@@ -1,20 +1,20 @@
 #Download all the files specified in data/filenames
-for url in $(<data/urls>)
-do
+for url in $(<data/urls); do
     bash scripts/download.sh $url data
 done
 
 
-# Download the contaminants fasta file, uncompress it, and
-# filter to remove all small nuclear RNAs
-bash scripts/download.sh https://bioinformatics.cnio.es/data/courses/decont/contaminants.fasta.gz  res y #TODO
+# Descargar los ficheros fasta contaminants, descomprimirlos, y
+# filtrar para eliminar todos los small nuclear RNAs
+bash scripts/download.sh https://bioinformatics.cnio.es/data/courses/decont/contaminants.fasta.gz  res yes #TODO
 
-# Index the contaminants file
+grep -v "small nuclear" res/contaminants.fasta > res/contaminants_filtered.fasta
+
+# Index los ficheros contaminants
 bash scripts/index.sh res/contaminants.fasta res/contaminants_idx
 
-# Merge the samples into a single file
-for sid in $(s data/.fastq.gz | sed 's/.\///' | cut -d'.' -f1 | sort -u)
-do
+# Fusionar los samples en un solo archivo
+for sid in $(ls data/*.fastq.gz | sed 's/.*\///' | cut -d'.' -f1 | sort -u); do
     bash scripts/merge_fastqs.sh data out/merged $sid
 done
 
@@ -22,8 +22,7 @@ done
 #cutadapt -m 18 -a TGGAATTCTCGGGTGCCAAGG --discard-untrimmed \
 #     -o <trimmed_file> <input_file> > <log_file>
 
-for fname in out/merged/*.fastq.gz
-do
+for fname in out/merged/*.fastq.gz; do
 	sid=$(basename "$fname" | cut -d '.' -f1)
 	mkdir -p log/cutadapt
 	cutadapt -m 18 -a TGGAATTCTCGGGTGCCAAGG --discard-untrimmed \
@@ -32,8 +31,7 @@ done
 
 
 # TODO: run STAR for all trimmed files
-for fname in out/trimmed/*.fastq.gz
-do
+for fname in out/trimmed/*.fastq.gz; do
     # you will need to obtain the sample ID from the filename
     sid=$(basename "$fname" | cut -d '.' -f1)
     mkdir -p "out/star/$sid"
@@ -48,4 +46,25 @@ done
 # - star: Percentages of uniquely mapped reads, reads mapped to multiple loci, and to too many loci
 # tip: use grep to filter the lines you're interested in
 
-cat log/cutadapt/*.log > log/pipeline.log
+echo "Pipeline log"
+
+for sid in $(ls data/*.fastq.gz | cut -d "-" -f1 | sed 's:data/::' | sort | uniq);
+do
+    {
+        echo "SAMPLE: $sid"
+        echo " "
+        
+        echo "CUTADAPT: "
+        grep -hi -e "Lectura con adaptadores" log/cutadapt/$sid.log 
+        grep -hi -e "Total pares de bases" log/cutadapt/$sid.log 
+        echo " "
+    	
+        echo "STAR: "
+        grep -hi -e "Lecturas mapeadas de forma única %" out/star/$sid/$sid_Log.final.out 
+        grep -hi -e "% de lecturas asignadas a varios loci" out/star/$sid/$sid_Log.final.out 
+        grep -hi -e "% de lecturas asignadas a muchos loci" out/star/$sid/$sid_Log.final.out 
+        echo " "
+    } >> log/pipeline.log
+
+done
+
